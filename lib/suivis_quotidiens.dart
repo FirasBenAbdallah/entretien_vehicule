@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'create_suivi.dart';
 
 class SuivisQuotidiens extends StatefulWidget {
+  const SuivisQuotidiens({super.key});
+
   @override
   _SuivisQuotidiensState createState() => _SuivisQuotidiensState();
 }
@@ -44,6 +46,33 @@ class _SuivisQuotidiensState extends State<SuivisQuotidiens> {
     }
   }
 
+  void _showImageDialog(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.network(
+                imageUrl,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(Icons.error, size: 50);
+                },
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text("Close"),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -77,15 +106,26 @@ class _SuivisQuotidiensState extends State<SuivisQuotidiens> {
                                     Text(suivi['VolumeCarburant'].toString())),
                                 DataCell(
                                   suivi['Preuve'] != null
-                                      ? Image.network(
-                                          "http://192.168.1.14:8000/uploads/" +
-                                              suivi['Preuve'].split('/').last,
-                                          width: 50,
-                                          height: 50,
-                                          errorBuilder:
-                                              (context, error, stackTrace) {
-                                            return const Icon(Icons.error);
+                                      ? GestureDetector(
+                                          onTap: () {
+                                            // Construct the full image URL
+                                            String imageUrl =
+                                                "http://192.168.1.14:8000/uploads/" +
+                                                    suivi['Preuve']
+                                                        .split('/')
+                                                        .last;
+                                            _showImageDialog(imageUrl);
                                           },
+                                          child: Image.network(
+                                            "http://192.168.1.14:8000/uploads/" +
+                                                suivi['Preuve'].split('/').last,
+                                            width: 50,
+                                            height: 50,
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                              return const Icon(Icons.error);
+                                            },
+                                          ),
                                         )
                                       : const Icon(Icons.image_not_supported),
                                 ),

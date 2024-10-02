@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class CreateSuivi extends StatefulWidget {
   const CreateSuivi({super.key});
 
   @override
-  _CreateSuiviState createState() {
-    return _CreateSuiviState();
-  }
+  _CreateSuiviState createState() => _CreateSuiviState();
 }
 
 class _CreateSuiviState extends State<CreateSuivi> {
@@ -17,29 +17,37 @@ class _CreateSuiviState extends State<CreateSuivi> {
   String? dateSuivi;
   int? kilometrage;
   double? volumeCarburant;
-  String? preuve;
+  File? preuve; // The selected image file
+
+  final ImagePicker _picker = ImagePicker();
 
   Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState!.validate() && preuve != null) {
       _formKey.currentState!.save();
 
-      // Build the request body
-      var body = {
-        'VehiculeID': vehiculeID.toString(),
-        'ChauffeurID': chauffeurID.toString(),
-        'DateSuivi': dateSuivi!,
-        'Kilometrage': kilometrage.toString(),
-        'VolumeCarburant': volumeCarburant.toString(),
-        'Preuve':
-            preuve!, // In a real app, this should be handled as a file upload
-      };
-
       try {
-        final response = await http.post(
+        // Prepare multipart request
+        var request = http.MultipartRequest(
+          'POST',
           Uri.parse(
               'http://192.168.1.14:8000/controllers/SuivisQuotidiens/CreateSuivi.php'),
-          body: body,
         );
+
+        // Add form fields
+        request.fields['VehiculeID'] = vehiculeID.toString();
+        request.fields['ChauffeurID'] = chauffeurID.toString();
+        request.fields['DateSuivi'] = dateSuivi!;
+        request.fields['Kilometrage'] = kilometrage.toString();
+        request.fields['VolumeCarburant'] = volumeCarburant.toString();
+
+        // Attach image file as multipart
+        if (preuve != null) {
+          request.files
+              .add(await http.MultipartFile.fromPath('Preuve', preuve!.path));
+        }
+
+        // Send the request
+        var response = await request.send();
 
         if (response.statusCode == 200) {
           Navigator.pop(
@@ -56,6 +64,30 @@ class _CreateSuiviState extends State<CreateSuivi> {
           SnackBar(content: Text('Failed to create suivi: $e')),
         );
       }
+    } else if (preuve == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select an image file')),
+      );
+    }
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        preuve = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<void> _takePicture() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.camera);
+
+    if (pickedFile != null) {
+      setState(() {
+        preuve = File(pickedFile.path);
+      });
     }
   }
 
@@ -128,16 +160,24 @@ class _CreateSuiviState extends State<CreateSuivi> {
                   return null;
                 },
               ),
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Preuve'),
-                onSaved: (value) => preuve = value,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter Preuve';
-                  }
-                  return null;
-                },
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  ElevatedButton(
+                    onPressed: _pickImageFromGallery,
+                    child: const Text('Select from Gallery'),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: _takePicture,
+                    child: const Text('Take Picture'),
+                  ),
+                ],
               ),
+              const SizedBox(height: 10),
+              preuve != null
+                  ? Text('File selected: ${preuve!.path.split('/').last}')
+                  : const Text('No file selected'),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _submitForm,
