@@ -60,12 +60,12 @@ class _SuivisQuotidiensState extends State<SuivisQuotidiens> {
                   return const Icon(Icons.error, size: 50);
                 },
               ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text("Close"),
-              ),
+              // TextButton(
+              //   onPressed: () {
+              //     Navigator.of(context).pop();
+              //   },
+              //   child: const Text("Close"),
+              // ),
             ],
           ),
         );
@@ -110,15 +110,11 @@ class _SuivisQuotidiensState extends State<SuivisQuotidiens> {
                                           onTap: () {
                                             // Construct the full image URL
                                             String imageUrl =
-                                                "http://192.168.1.14:8000/uploads/" +
-                                                    suivi['Preuve']
-                                                        .split('/')
-                                                        .last;
+                                                "http://192.168.1.14:8000/uploads/${suivi['Preuve'].split('/').last}";
                                             _showImageDialog(imageUrl);
                                           },
                                           child: Image.network(
-                                            "http://192.168.1.14:8000/uploads/" +
-                                                suivi['Preuve'].split('/').last,
+                                            "http://192.168.1.14:8000/uploads/${suivi['Preuve'].split('/').last}",
                                             width: 50,
                                             height: 50,
                                             errorBuilder:
